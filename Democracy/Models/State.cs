@@ -17,5 +17,7 @@ namespace Democracy.Models
                         MinimumLength = 3)]
         [Display(Name = "State description")]
         public string Description { get; set; }
+
+        public virtual ICollection<Voting> Votings { get; set; }
     }
 }
