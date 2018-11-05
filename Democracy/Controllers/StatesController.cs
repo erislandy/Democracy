@@ -111,7 +111,25 @@ namespace Democracy.Controllers
         {
             State state = db.States.Find(id);
             db.States.Remove(state);
-            db.SaveChanges();
+            try
+            {
+                db.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+
+                if (ex.InnerException != null &&
+                     ex.InnerException.InnerException != null &&
+                     ex.InnerException.InnerException.Message.Contains("REFERENCE"))
+                {
+                    ViewBag.Error = "Can't delete record 'cause it has related records";
+                }
+                else
+                {
+                    ViewBag.Error = ex.Message;
+                }
+                return View(state);
+            }
             return RedirectToAction("Index");
         }
 
