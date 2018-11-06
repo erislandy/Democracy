@@ -16,5 +16,7 @@ namespace Democracy.Models
                         "The field {0} can contain maximum {1} and minimun {2} character",
                         MinimumLength = 3)]
         public string Description { get; set; }
+
+        public virtual ICollection<GroupMember> GroupMembers { get; set; }
     }
 }
