@@ -20,6 +20,75 @@ namespace Democracy.Controllers
             return View(db.Groups.ToList());
         }
 
+        // GET: AddMembers
+        [HttpGet]
+        public ActionResult AddMember(int? id)
+        {
+            ViewBag.UserId = new SelectList(db.Users.OrderBy(u => u.FirstName),"UserId","FullName");
+
+            if(id == null)
+            {
+                return RedirectToAction("Index");
+            }
+           
+            var addMemberView = new AddMemberView()
+            {
+                GroupId = (int)id
+            };
+            return View(addMemberView);
+        }
+
+        // GET: DeleteMembers
+        [HttpGet]
+        public ActionResult DeleteMember(int? id)
+        {
+            var member = db.GroupMembers.Find(id);
+            if (member != null)
+            {
+                db.GroupMembers.Remove(member);
+                db.SaveChanges();
+            }
+
+            return RedirectToAction(string.Format("Details/{0}", member.GroupId));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult AddMember(AddMemberView addMemberView)
+        {
+            if (!ModelState.IsValid)
+            {
+                ViewBag.UserId = new SelectList(db.Users.OrderBy(u => u.FirstName), "UserId", "FullName");
+                return View(addMemberView);
+            }
+
+            var groupMember = db.GroupMembers
+                                .Where(gm =>
+                                            gm.GroupId == addMemberView.GroupId && 
+                                            gm.UserId == addMemberView.UserId)
+                                .FirstOrDefault();
+
+            if(groupMember != null)
+            {
+
+                ViewBag.UserId = new SelectList(db.Users.OrderBy(u => u.FirstName), "UserId", "FullName");
+                ViewBag.Error = "The user already belongs at group";
+                return View(addMemberView);
+            }
+
+            groupMember = new GroupMember
+            {
+                GroupId = addMemberView.GroupId,
+                UserId = addMemberView.UserId
+            };
+
+            db.GroupMembers.Add(groupMember);
+            db.SaveChanges();
+            return RedirectToAction(string.Format("Details/{0}",addMemberView.GroupId));
+        }
+
+
+
         // GET: Groups/Details/5
         public ActionResult Details(int? id)
         {
@@ -32,7 +101,14 @@ namespace Democracy.Controllers
             {
                 return HttpNotFound();
             }
-            return View(group);
+
+            var groupDetailsView = new GroupDetailsView
+            {
+                GroupId = group.GroupId,
+                Description = group.Description,
+                GroupMembers = group.GroupMembers.ToList()
+            };
+            return View(groupDetailsView);
         }
 
         // GET: Groups/Create

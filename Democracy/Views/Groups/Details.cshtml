@@ -1,4 +1,4 @@
-﻿@model Democracy.Models.Group
+﻿@model Democracy.Models.GroupDetailsView
 
 @{
     ViewBag.Title = "Details";
@@ -21,6 +21,55 @@
     </dl>
 </div>
 <p>
-    @Html.ActionLink("Edit", "Edit", new { id = Model.GroupId }) |
-    @Html.ActionLink("Back to List", "Index")
+    @Html.ActionLink("Edit", "Edit", new { id = Model.GroupId }, new { @class="btn btn-primary"}) 
+    @Html.ActionLink("AddMember", "AddMember", new { id = Model.GroupId }, new { @class = "btn btn-warning" })
+    @Html.ActionLink("Back to List", "Index", new { }, new { @class = "btn btn-success" })
 </p>
+
+@if(Model.GroupMembers.Count == 0)
+{
+    <h3>there are not member yet</h3>
+}
+else
+{
+    <table class="table">
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.GroupMembers[0].User.UserName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.GroupMembers[0].User.FullName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.GroupMembers[0].User.Photo)
+            </th>
+        </tr>
+
+        @foreach (var item in Model.GroupMembers)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.User.UserName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.User.FullName)
+                </td>
+                 <td>
+                    @if (!string.IsNullOrEmpty(item.User.Photo))
+                    {
+                        <img src="@Url.Content(item.User.Photo)" alt="Image"
+                             style="width:100px;height:100px;max-width: 100%; height: auto;" /> 
+                    }
+                </td>
+                <td>
+                    @Html.ActionLink("Delete", "DeleteMember", new { id = item.GroupMemberId}, new { @class = "btn btn-danger", onclick = "return confirm('Are you sure to delete this member?')" })
+                </td>
+            </tr>
+        }
+
+    </table>
+
+
+
+}
+
