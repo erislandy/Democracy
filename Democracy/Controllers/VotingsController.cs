@@ -14,7 +14,99 @@ namespace Democracy.Controllers
     {
         private DemocracyContext db = new DemocracyContext();
 
-        
+        //GET: DeleteCandidate
+        [HttpGet]
+        public ActionResult DeleteCandidate(int id)
+        {
+            var candidate = db.Candidates.Find(id);
+
+            if(candidate != null)
+            {
+                db.Candidates.Remove(candidate);
+                db.SaveChanges();
+            }
+
+            return RedirectToAction(string.Format("Details/{0}", candidate.VotingId));
+        }
+
+        //GET: DeleteVotingGroup
+        [HttpGet]
+        public ActionResult DeleteGroup(int id)
+        {
+            var votingGroup = db.VotingGroups.Find(id);
+
+            if(votingGroup != null)
+            {
+                db.VotingGroups.Remove(votingGroup);
+                db.SaveChanges();
+            }
+
+            return RedirectToAction(string.Format("Details/{0}", votingGroup.VotingId));
+        }
+
+        //GET: AddCandidate
+        [HttpGet]
+        public ActionResult AddCandidate(int id)
+        {
+            ViewBag.UserId = new SelectList(
+                                        db.Users.OrderBy(g => g.FirstName).ThenBy(g => g.LastName),
+                                        "UserId",
+                                        "FullName");
+            var view = new AddCandidateView
+            {
+                VotingId = id
+            };
+
+            return View(view);
+        }
+
+        //POST:AddPost
+
+        [HttpPost]
+        public ActionResult AddCandidate(AddCandidateView view)
+        {
+            if (ModelState.IsValid)
+            {
+                var candidate = db.Candidates
+                                    .Where(c => c.VotingId == view.VotingId &&
+                                                 c.UserId == view.UserId)
+                                    .FirstOrDefault();
+
+                if (candidate != null)
+                {
+                    ModelState.AddModelError(string.Empty, "The candidate already belongs to voting");
+                    ViewBag.UserId = new SelectList(
+                                       db.Users.OrderBy(g => g.FirstName).ThenBy(g => g.LastName),
+                                       "UserId",
+                                       "FullName");
+
+                    return View(view);
+                }
+
+                candidate = new Candidate
+                {
+                    UserId = view.UserId,
+                    VotingId = view.VotingId
+                };
+
+                db.Candidates.Add(candidate);
+                db.SaveChanges();
+
+                return RedirectToAction(string.Format("Details/{0}", candidate.VotingId));
+
+
+
+            }
+
+            ViewBag.UserId = new SelectList(
+                                       db.Users.OrderBy(g => g.FirstName).ThenBy(g => g.LastName),
+                                       "UserId",
+                                       "FullName");
+
+
+            return View(view);
+        }
+
 
         //GET: AddGroup
         [HttpGet]
@@ -46,7 +138,7 @@ namespace Democracy.Controllers
 
                 if(votingGroup != null)
                 {
-                    ViewBag.Error = "The group already belongs to voting";
+                    ModelState.AddModelError(string.Empty, "The group already belongs to voting");
                     ViewBag.GroupId = new SelectList(
                                       db.Groups.OrderBy(g => g.Description),
                                       "GroupId",
@@ -95,7 +187,26 @@ namespace Democracy.Controllers
             {
                 return HttpNotFound();
             }
-            return View(voting);
+
+            var detailsVotingView = new DetailsVotingView
+            {
+                Candidates = voting.Candidates.ToList(),
+                CandidateWinId = voting.CandidateWinId,
+                DateTimeEnd = voting.DateTimeEnd,
+                DateTimeStart = voting.DateTimeStart,
+                Description = voting.Description,
+                IsEnabledBlankVote = voting.IsEnabledBlankVote,
+                IsForAllUsers = voting.IsForAllUsers,
+                QuantityBlankVotes = voting.QuantityBlankVotes,
+                QuantityVotes = voting.QuantityVotes,
+                Remarks = voting.Remarks,
+                State = voting.State,
+                StateId = voting.StateId,
+                VotingGroups = voting.VotingGroups.ToList(),
+                VotingId = voting.VotingId,
+            };
+
+            return View(detailsVotingView);
         }
 
         // GET: Votings/Create

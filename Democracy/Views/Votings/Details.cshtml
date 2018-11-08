@@ -1,4 +1,4 @@
-﻿@model Democracy.Models.Voting
+﻿@model Democracy.Models.DetailsVotingView
 
 @{
     ViewBag.Title = "Details";
@@ -102,3 +102,99 @@
     @Html.ActionLink("Add candidate", "AddCandidate", new { id = Model.VotingId }, new { @class = "btn btn-info" })
     @Html.ActionLink("Back to List", "Index",new { }, new { @class = "btn btn-success"})
 </p>
+
+<div class="row">
+    <section id="groups" class="col-md-4">
+        <h4>Groups</h4>
+        @if (Model.VotingGroups.Count > 0)
+        {
+            <table class="table">
+                <tr>
+                    <th>
+                        @Html.DisplayNameFor(model => model.VotingGroups[0].Group.Description)
+                    </th>
+               </tr>
+
+                @foreach (var item in Model.VotingGroups)
+                {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Group.Description)
+                        </td>
+                        <td>
+                            @Html.ActionLink(
+                                             "Delete",
+                                             "DeleteGroup",
+                                             new { id = item.VotingGroupId },
+                                               new
+                                               {
+                                                   @class = "btn btn-danger",
+                                                   onclick = "return confirm('Are you sure to delete this member?');"
+                                               })
+                        </td>
+                    </tr>
+                }
+
+            </table>
+
+        }
+        else
+        {
+            <p4>There are not groups yet</p4>
+        }
+    </section>
+
+    <section id="candidates" class="col-md-8">
+        <h4>Candidates</h4>
+
+        @if (Model.Candidates.Count > 0)
+        {
+            <table class="table">
+                <tr>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Candidates[0].User.UserName)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Candidates[0].User.FullName)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Candidates[0].User.Photo)
+                    </th>
+                </tr>
+
+                @foreach (var item in Model.Candidates)
+                {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.User.UserName)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.User.FullName)
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(item.User.Photo))
+                            {
+                                <img src="@Url.Content(item.User.Photo)" alt="Image"
+                                     style="width:100px;height:100px;max-width: 100%; height: auto;" />  }
+                        </td>
+                        <td>
+                            @Html.ActionLink(
+                                                "Delete",
+                                                "DeleteCandidate",
+                                                new { id = item.CandidateId },
+                                                new { @class = "btn btn-danger",
+                                                    onclick = "return confirm('Are you sure to delete this member?');"
+                                                })
+                        </td>
+                    </tr>
+                }
+
+            </table>
+        }
+        else
+        {
+            <p4>There are not candidates yet</p4>
+        }
+    </section>
+
+</div>
