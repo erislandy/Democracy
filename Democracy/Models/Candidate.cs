@@ -13,5 +13,7 @@ namespace Democracy.Models
         public int QuantityVotes { get; set; }
         public virtual Voting Voting { get; set; }
         public virtual User User { get; set; }
+        public virtual ICollection<VotingDetail> VotingDetails { get; set; }
+
     }
 }

@@ -14,7 +14,176 @@ namespace Democracy.Controllers
     {
         private DemocracyContext db = new DemocracyContext();
 
-        //GET: DeleteCandidate
+        [Authorize(Roles = "User")]
+        public ActionResult VoteForCandidate(int candidateId, int votingId)
+        {
+            var user = db.Users.Where(u => u.UserName == User.Identity.Name).FirstOrDefault();
+
+            if(user == null)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            var voting = db.Votings.Find(votingId);
+
+            if(voting == null)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            var candidate = db.Candidates.Find(candidateId);
+
+            if (candidate == null)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            if(VoteCandidate(user, candidate, voting))
+            {
+                return RedirectToAction("MyVotings");
+
+            }
+
+            return RedirectToAction("MyVotings");
+        }
+
+        private bool VoteCandidate(User user, Candidate candidate, Voting voting)
+        {
+            using (var transaction = db.Database.BeginTransaction())
+            {
+                var votingDetail = new VotingDetail()
+                {
+                    CandidateId = candidate.CandidateId,
+                    UserId = user.UserId,
+                    VotingId = voting.VotingId
+                };
+                db.VotingDetails.Add(votingDetail);
+
+                candidate.QuantityVotes++;
+                db.Entry(candidate).State = EntityState.Modified;
+
+                voting.QuantityVotes++;
+                db.Entry(voting).State = EntityState.Modified;
+
+                try
+                {
+                    db.SaveChanges();
+                    transaction.Commit();
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    
+                }
+                return false;
+            }
+        }
+
+        [Authorize(Roles = "User")]
+        public ActionResult Vote(int votingId)
+        {
+            var voting = db.Votings.Find(votingId);
+            var view = new VotingVoteView()
+            {
+                DateTimeEnd = voting.DateTimeEnd,
+                DateTimeStart = voting.DateTimeStart,
+                Description = voting.Description,
+                IsEnabledBlankVote = voting.IsEnabledBlankVote,
+                IsForAllUsers = voting.IsForAllUsers,
+                Remarks = voting.Remarks,
+                VotingId = voting.VotingId,
+                MyCandidates = voting.Candidates.ToList(),
+            };
+
+            return View(view);
+        }
+
+        [Authorize(Roles = "User")]
+        public ActionResult MyVotings()
+        {
+            var user = db.Users.Where(u => u.UserName == User.Identity.Name).FirstOrDefault();
+
+            if(user == null)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "there is an error with the current user, call to support system");
+                return View();
+            }
+
+            //Get event votings at the correct time
+            var state = GetState("Opened");
+
+            var votings = db.Votings.Where(v => v.DateTimeStart <= DateTime.Now &&
+                                                v.DateTimeEnd >= DateTime.Now &&
+                                                v.StateId == state.StateId)
+                                    .Include(v => v.Candidates)
+                                    .Include(v => v.VotingGroups)
+                                    .Include(v => v.State)
+                                    .ToList();
+
+            //Discard events where user has voted
+
+            foreach (var voting in votings.ToList())
+            {
+                var votingDetail = db.VotingDetails.Where(vd => vd.UserId == user.UserId &&
+                                                                vd.VotingId == voting.VotingId)
+                                                   .FirstOrDefault();
+                if(votingDetail != null)
+                {
+                    votings.Remove(voting);
+                }
+            }
+
+            //Discard events by groups where user is not included
+
+            foreach (var voting in votings.ToList())
+            {
+                if (voting.IsForAllUsers)
+                    continue;
+
+                bool userBelongToGroup = false;
+
+                foreach (var votingGroup in voting.VotingGroups)
+                {
+                    var userGroup = votingGroup.Group
+                                               .GroupMembers
+                                               .Where(gm => gm.UserId == user.UserId)
+                                               .FirstOrDefault();
+                    if(userGroup != null)
+                    {
+                        userBelongToGroup = true;
+                        break;
+                    }
+                }
+
+                if (!userBelongToGroup)
+                {
+                    votings.Remove(voting);
+                }
+            }
+
+            return View(votings);
+        }
+
+        private State GetState(string stateName)
+        {
+            var state = db.States.Where(s => s.Description == stateName)
+                                 .FirstOrDefault();
+            if(state == null)
+            {
+                state = new State
+                {
+                    Description = stateName
+                };
+                db.States.Add(state);
+                db.SaveChanges();
+            }
+            return state;
+        }
+
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public ActionResult DeleteCandidate(int id)
         {
@@ -29,7 +198,7 @@ namespace Democracy.Controllers
             return RedirectToAction(string.Format("Details/{0}", candidate.VotingId));
         }
 
-        //GET: DeleteVotingGroup
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public ActionResult DeleteGroup(int id)
         {
@@ -44,7 +213,7 @@ namespace Democracy.Controllers
             return RedirectToAction(string.Format("Details/{0}", votingGroup.VotingId));
         }
 
-        //GET: AddCandidate
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public ActionResult AddCandidate(int id)
         {
@@ -108,7 +277,7 @@ namespace Democracy.Controllers
         }
 
 
-        //GET: AddGroup
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public ActionResult AddGroup(int id)
         {
@@ -175,7 +344,7 @@ namespace Democracy.Controllers
             return View(votings.ToList());
         }
 
-        // GET: Votings/Details/5
+        [Authorize(Roles = "Admin")]
         public ActionResult Details(int? id)
         {
             if (id == null)
@@ -209,7 +378,7 @@ namespace Democracy.Controllers
             return View(detailsVotingView);
         }
 
-        // GET: Votings/Create
+        [Authorize(Roles = "Admin")]
         public ActionResult Create()
         {
             ViewBag.StateId = new SelectList(db.States, "StateId", "Description");
@@ -254,7 +423,7 @@ namespace Democracy.Controllers
             return View(view);
         }
 
-        // GET: Votings/Edit/5
+        [Authorize(Roles = "Admin")]
         public ActionResult Edit(int? id)
         {
             if (id == null)
@@ -318,7 +487,7 @@ namespace Democracy.Controllers
             return View(view);
         }
 
-        // GET: Votings/Delete/5
+        [Authorize(Roles = "Admin")]
         public ActionResult Delete(int? id)
         {
             if (id == null)
