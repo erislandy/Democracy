@@ -14,6 +14,16 @@ namespace Democracy.Controllers
     {
         private DemocracyContext db = new DemocracyContext();
 
+
+        [Authorize(Roles = "User")]
+        public ActionResult Results()
+        {
+            var votings = db.Votings.Include(v => v.State);
+            return View(votings.ToList());
+        }
+
+
+
         [Authorize(Roles = "User")]
         public ActionResult VoteForCandidate(int candidateId, int votingId)
         {
