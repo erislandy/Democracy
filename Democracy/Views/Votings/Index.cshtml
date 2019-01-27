@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Democracy.Models.Voting>
+﻿@model IEnumerable<Democracy.Models.VotingIndexView>
 
 @{
     ViewBag.Title = "Index";
@@ -7,7 +7,7 @@
 <h2>Votings</h2>
 
 <p>
-    @Html.ActionLink("Create New", "Create")
+    @Html.ActionLink("Create New", "Create", new { }, new { @class="btn btn-primary"})
 </p>
 <table class="table">
     <tr>
@@ -39,7 +39,7 @@
             @Html.DisplayNameFor(model => model.QuantityBlankVotes)
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.CandidateWinId)
+            Winner
         </th>
         <th></th>
     </tr>
@@ -74,12 +74,14 @@
             @Html.DisplayFor(modelItem => item.QuantityBlankVotes)
         </td>
         <td>
-            @Html.DisplayFor(modelItem => item.CandidateWinId)
+            @Html.DisplayFor(modelItem => item.Winner.FullName)
         </td>
         <td>
-            @Html.ActionLink("Edit", "Edit", new { id=item.VotingId }) |
-            @Html.ActionLink("Details", "Details", new { id=item.VotingId }) |
-            @Html.ActionLink("Delete", "Delete", new { id=item.VotingId })
+            @Html.ActionLink("Edit", "Edit", new { id = item.VotingId }, new { @class = "btn btn-primary"}) |
+            @Html.ActionLink("Details", "Details", new { id = item.VotingId }, new { @class = "btn btn-warning" }) |
+            @Html.ActionLink("Results", "ShowResults", new { id = item.VotingId }, new { @class = "btn btn-default", target = "_blank" }) |
+            @Html.ActionLink("Close", "Close", new { id = item.VotingId }, new { @class = "btn btn-info", onclick = "return confirm('Are you sure to close this votation?')" }) |
+            @Html.ActionLink("Delete", "Delete", new { id = item.VotingId }, new { @class = "btn btn-danger" })
         </td>
     </tr>
 }

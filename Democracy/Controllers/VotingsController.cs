@@ -14,12 +14,80 @@ namespace Democracy.Controllers
     {
         private DemocracyContext db = new DemocracyContext();
 
+        [Authorize(Roles = "Admin")]
+        public ActionResult Close(int id)
+        {
+            var voting = db.Votings.Find(id);
+
+            if(voting != null)
+            {
+                var candidate = db.Candidates.Where(c => c.VotingId == voting.VotingId)
+                                             .OrderByDescending(c => c.QuantityVotes)
+                                             .FirstOrDefault();
+                if(candidate != null)
+                {
+                    var state = GetState("Closed");
+                    voting.StateId = state.StateId;
+                    voting.CandidateWinId = candidate.User.UserId;
+                    db.Entry(voting).State = EntityState.Modified;
+                    db.SaveChanges();
+
+                }
+            }
+            return RedirectToAction("Index");
+        }
+
+        public ActionResult ShowResults(int id)
+        {
+            //Falta codigo para hacer reporte
+
+            return null;
+        }
+        
+
+
 
         [Authorize(Roles = "User")]
         public ActionResult Results()
         {
-            var votings = db.Votings.Include(v => v.State);
-            return View(votings.ToList());
+            var state = GetState("Closed");
+
+            var votings = db.Votings
+                            .Where(v => v.StateId == state.StateId)
+                            .Include(v => v.State);
+
+            var db2 = new DemocracyContext();
+            var view = new List<VotingIndexView>();
+
+            foreach (var voting in votings)
+            {
+                User user = null;
+                if (voting.CandidateWinId != 0)
+                {
+                    user = db2.Users.Find(voting.CandidateWinId);
+                }
+
+                view.Add(new VotingIndexView()
+                {
+                    CandidateWinId = voting.CandidateWinId,
+                    DateTimeEnd = voting.DateTimeEnd,
+                    DateTimeStart = voting.DateTimeStart,
+                    Description = voting.Description,
+                    IsEnabledBlankVote = voting.IsEnabledBlankVote,
+                    IsForAllUsers = voting.IsForAllUsers,
+                    QuantityBlankVotes = voting.QuantityBlankVotes,
+                    QuantityVotes = voting.QuantityVotes,
+                    Remarks = voting.Remarks,
+                    StateId = voting.StateId,
+                    State = voting.State,
+                    VotingId = voting.VotingId,
+                    Winner = user
+
+                }
+
+                    );
+            }
+            return View(view);
         }
 
 
@@ -351,7 +419,38 @@ namespace Democracy.Controllers
         public ActionResult Index()
         {
             var votings = db.Votings.Include(v => v.State);
-            return View(votings.ToList());
+            var db2 = new DemocracyContext();
+            var view = new List<VotingIndexView>();
+
+            foreach (var voting in votings)
+            {
+                User user = null;
+                if(voting.CandidateWinId != 0)
+                {
+                    user = db2.Users.Find(voting.CandidateWinId);
+                }
+
+                view.Add( new VotingIndexView()
+                {
+                    CandidateWinId = voting.CandidateWinId,
+                    DateTimeEnd = voting.DateTimeEnd,
+                    DateTimeStart = voting.DateTimeStart,
+                    Description = voting.Description,
+                    IsEnabledBlankVote = voting.IsEnabledBlankVote,
+                    IsForAllUsers = voting.IsForAllUsers,
+                    QuantityBlankVotes = voting.QuantityBlankVotes,
+                    QuantityVotes = voting.QuantityVotes,
+                    Remarks = voting.Remarks,
+                    StateId = voting.StateId,
+                    State = voting.State,
+                    VotingId = voting.VotingId,
+                    Winner = user
+
+                }
+
+                    );
+            }
+            return View(view);
         }
 
         [Authorize(Roles = "Admin")]

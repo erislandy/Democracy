@@ -231,6 +231,7 @@
     <Compile Include="Models\Voting.cs" />
     <Compile Include="Models\VotingDetails.cs" />
     <Compile Include="Models\VotingGroup.cs" />
+    <Compile Include="Models\VotingIndexView.cs" />
     <Compile Include="Models\VotingView.cs" />
     <Compile Include="Models\VotingVoteView.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
