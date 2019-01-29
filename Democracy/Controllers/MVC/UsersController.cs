@@ -10,6 +10,7 @@ using Democracy.Models;
 using System.IO;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
+using Democracy.Classes;
 
 namespace Democracy.Controllers
 {
@@ -216,7 +217,7 @@ namespace Democracy.Controllers
             try
             {
                 db.SaveChanges();
-                CreateASPUser(userView);
+                Utilities.CreateASPUser(userView);
             }
             catch (Exception ex)
             {
@@ -237,37 +238,7 @@ namespace Democracy.Controllers
             return RedirectToAction("Index");
         }
 
-        private void CreateASPUser(UserView userView)
-        {
-            // User management
-            var userContext = new ApplicationDbContext();
-            var userManager = new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(userContext));
-            var roleManager = new RoleManager<IdentityRole>(new RoleStore<IdentityRole>(userContext));
-
-            // Create User role
-            string roleName = "User";
-
-            // Check to see if Role Exists, if not create it
-            if (!roleManager.RoleExists(roleName))
-            {
-                roleManager.Create(new IdentityRole(roleName));
-            }
-
-            // Create the ASP NET User
-            var userASP = new ApplicationUser
-            {
-                UserName = userView.UserName,
-                Email = userView.UserName,
-                PhoneNumber = userView.Phone,
-            };
-
-            userManager.Create(userASP, userASP.UserName);
-
-            // Add user to role
-            userASP = userManager.FindByName(userView.UserName);
-            userManager.AddToRole(userASP.Id, "User");
-
-        }
+       
 
         // GET: Users/Edit/5
         [Authorize(Roles = "Admin")]

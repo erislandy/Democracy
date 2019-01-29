@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -55,8 +56,11 @@ namespace Democracy.Models
         [DataType(DataType.ImageUrl)]
         public string Photo { get; set; }
 
+        [JsonIgnore]
         public virtual ICollection<GroupMember> GroupMembers { get; set; }
+        [JsonIgnore]
         public virtual ICollection<Candidate> Candidates { get; set; }
+        [JsonIgnore]
         public virtual ICollection<VotingDetail> VotingDetails { get; set; }
 
     }
