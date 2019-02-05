@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Web;
 using System.Web.Mvc;
+using Democracy.Classes;
 using Democracy.Models;
 
 namespace Democracy.Controllers
@@ -26,7 +27,7 @@ namespace Democracy.Controllers
                                              .FirstOrDefault();
                 if(candidate != null)
                 {
-                    var state = GetState("Closed");
+                    var state = Utilities.GetState("Closed");
                     voting.StateId = state.StateId;
                     voting.CandidateWinId = candidate.User.UserId;
                     db.Entry(voting).State = EntityState.Modified;
@@ -50,7 +51,7 @@ namespace Democracy.Controllers
         [Authorize(Roles = "User")]
         public ActionResult Results()
         {
-            var state = GetState("Closed");
+            var state = Utilities.GetState("Closed");
 
             var votings = db.Votings
                             .Where(v => v.StateId == state.StateId)
@@ -190,77 +191,12 @@ namespace Democracy.Controllers
                 return View();
             }
 
-            //Get event votings at the correct time
-            var state = GetState("Opened");
-
-            var votings = db.Votings.Where(v => v.DateTimeStart <= DateTime.Now &&
-                                                v.DateTimeEnd >= DateTime.Now &&
-                                                v.StateId == state.StateId)
-                                    .Include(v => v.Candidates)
-                                    .Include(v => v.VotingGroups)
-                                    .Include(v => v.State)
-                                    .ToList();
-
-            //Discard events where user has voted
-
-            foreach (var voting in votings.ToList())
-            {
-                var votingDetail = db.VotingDetails.Where(vd => vd.UserId == user.UserId &&
-                                                                vd.VotingId == voting.VotingId)
-                                                   .FirstOrDefault();
-                if(votingDetail != null)
-                {
-                    votings.Remove(voting);
-                }
-            }
-
-            //Discard events by groups where user is not included
-
-            foreach (var voting in votings.ToList())
-            {
-                if (voting.IsForAllUsers)
-                    continue;
-
-                bool userBelongToGroup = false;
-
-                foreach (var votingGroup in voting.VotingGroups)
-                {
-                    var userGroup = votingGroup.Group
-                                               .GroupMembers
-                                               .Where(gm => gm.UserId == user.UserId)
-                                               .FirstOrDefault();
-                    if(userGroup != null)
-                    {
-                        userBelongToGroup = true;
-                        break;
-                    }
-                }
-
-                if (!userBelongToGroup)
-                {
-                    votings.Remove(voting);
-                }
-            }
+            var votings = Utilities.MyVotings(user);
 
             return View(votings);
         }
 
-        private State GetState(string stateName)
-        {
-            var state = db.States.Where(s => s.Description == stateName)
-                                 .FirstOrDefault();
-            if(state == null)
-            {
-                state = new State
-                {
-                    Description = stateName
-                };
-                db.States.Add(state);
-                db.SaveChanges();
-            }
-            return state;
-        }
-
+     
         [Authorize(Roles = "Admin")]
         [HttpGet]
         public ActionResult DeleteCandidate(int id)

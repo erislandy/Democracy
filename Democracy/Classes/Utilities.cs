@@ -3,14 +3,17 @@ using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.IO;
 using System.Linq;
 using System.Web;
 
 namespace Democracy.Classes
 {
-    public class Utilities
+    public class Utilities : IDisposable
     {
+        private static DemocracyContext db = new DemocracyContext();
+
         public static void UploadPhoto(HttpPostedFileBase file)
         {
             //Upload file
@@ -85,5 +88,84 @@ namespace Democracy.Classes
             userManager.Create(userASP, user.CurrentPassword);
             userManager.AddToRole(userASP.Id, "User");
         }
+
+        public static List<Voting> MyVotings(User user)
+        {
+            //Get event votings at the correct time
+            var state = GetState("Opened");
+
+            var votings = db.Votings.Where(v => v.DateTimeStart <= DateTime.Now &&
+                                                v.DateTimeEnd >= DateTime.Now &&
+                                                v.StateId == state.StateId)
+                                    .Include(v => v.Candidates)
+                                    .Include(v => v.VotingGroups)
+                                    .Include(v => v.State)
+                                    .ToList();
+
+            //Discard events where user has voted
+
+            foreach (var voting in votings.ToList())
+            {
+                var votingDetail = db.VotingDetails.Where(vd => vd.UserId == user.UserId &&
+                                                                vd.VotingId == voting.VotingId)
+                                                   .FirstOrDefault();
+                if (votingDetail != null)
+                {
+                    votings.Remove(voting);
+                }
+            }
+
+            //Discard events by groups where user is not included
+
+            foreach (var voting in votings.ToList())
+            {
+                if (voting.IsForAllUsers)
+                    continue;
+
+                bool userBelongToGroup = false;
+
+                foreach (var votingGroup in voting.VotingGroups)
+                {
+                    var userGroup = votingGroup.Group
+                                               .GroupMembers
+                                               .Where(gm => gm.UserId == user.UserId)
+                                               .FirstOrDefault();
+                    if (userGroup != null)
+                    {
+                        userBelongToGroup = true;
+                        break;
+                    }
+                }
+
+                if (!userBelongToGroup)
+                {
+                    votings.Remove(voting);
+                }
+            }
+
+            return votings;
+        }
+
+        public void Dispose()
+        {
+            db.Dispose();
+        }
+
+        public static State GetState(string stateName)
+        {
+            var state = db.States.Where(s => s.Description == stateName)
+                                 .FirstOrDefault();
+            if (state == null)
+            {
+                state = new State
+                {
+                    Description = stateName
+                };
+                db.States.Add(state);
+                db.SaveChanges();
+            }
+            return state;
+        }
+
     }
 }

@@ -201,6 +201,7 @@
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Classes\Utilities.cs" />
     <Compile Include="Controllers\API\UsersController.cs" />
+    <Compile Include="Controllers\API\VotingsController.cs" />
     <Compile Include="Controllers\MVC\AccountController.cs" />
     <Compile Include="Controllers\MVC\GroupsController.cs" />
     <Compile Include="Controllers\MVC\HomeController.cs" />
@@ -217,6 +218,7 @@
     <Compile Include="Models\AddGroupView.cs" />
     <Compile Include="Models\AddMemberView.cs" />
     <Compile Include="Models\Candidate.cs" />
+    <Compile Include="Models\CandidateResponse.cs" />
     <Compile Include="Models\DemocracyContext.cs" />
     <Compile Include="Models\DetailsVotingView.cs" />
     <Compile Include="Models\Group.cs" />
@@ -235,6 +237,7 @@
     <Compile Include="Models\VotingDetails.cs" />
     <Compile Include="Models\VotingGroup.cs" />
     <Compile Include="Models\VotingIndexView.cs" />
+    <Compile Include="Models\VotingResponse.cs" />
     <Compile Include="Models\VotingView.cs" />
     <Compile Include="Models\VotingVoteView.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

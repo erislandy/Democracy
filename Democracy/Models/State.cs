@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -18,6 +19,7 @@ namespace Democracy.Models
         [Display(Name = "State description")]
         public string Description { get; set; }
 
+        [JsonIgnore]
         public virtual ICollection<Voting> Votings { get; set; }
     }
 }
